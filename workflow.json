@@ -1,0 +1,186 @@
+{
+  "name": "Google Customer Feedback Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_FORM_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Form Responses 1",
+          "mode": "name"
+        },
+        "event": "rowAdded"
+      },
+      "id": "1a2b3c4d-0001-0001-0001-000000000001",
+      "name": "Google Sheets Trigger",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 4,
+      "position": [240, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-001",
+              "leftValue": "={{ $json['Feedback'] }}",
+              "rightValue": "bad, poor, terrible, unhappy, disappointed, worst, negative, awful, horrible",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1a2b3c4d-0002-0002-0002-000000000002",
+      "name": "IF: Positive Feedback?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json['Email'] }}",
+        "subject": "Thank You! Here's Your Exclusive Discount 🎁",
+        "emailType": "html",
+        "message": "<h2>Thank you for your positive feedback!</h2><p>Dear {{ $json['Name'] || 'Valued Customer' }},</p><p>We truly appreciate your kind words! As a token of our gratitude, here is an exclusive discount code just for you:</p><h3 style='color: #e44d26; font-size: 24px; text-align: center;'>THANKYOU20</h3><p>Use this code at checkout to receive <strong>20% off</strong> your next order.</p><p>Thank you for being an amazing customer!</p><p>Best regards,<br>The Team</p>",
+        "options": {}
+      },
+      "id": "1a2b3c4d-0003-0003-0003-000000000003",
+      "name": "Send Discount Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [700, 200],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_NEGATIVE_FEEDBACK_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Negative Feedback",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "Customer Name": "={{ $json['Name'] }}",
+            "Email": "={{ $json['Email'] }}",
+            "Feedback": "={{ $json['Feedback'] }}",
+            "Status": "Pending Review"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "1a2b3c4d-0004-0004-0004-000000000004",
+      "name": "Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [700, 400],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "IF: Positive Feedback?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Positive Feedback?": {
+      "main": [
+        [
+          {
+            "node": "Send Discount Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "google-feedback-automation-v1",
+  "tags": [
+    {
+      "createdAt": "2025-06-04T00:00:00.000Z",
+      "updatedAt": "2025-06-04T00:00:00.000Z",
+      "id": "tag-001",
+      "name": "automation"
+    },
+    {
+      "createdAt": "2025-06-04T00:00:00.000Z",
+      "updatedAt": "2025-06-04T00:00:00.000Z",
+      "id": "tag-002",
+      "name": "google-forms"
+    },
+    {
+      "createdAt": "2025-06-04T00:00:00.000Z",
+      "updatedAt": "2025-06-04T00:00:00.000Z",
+      "id": "tag-003",
+      "name": "feedback"
+    }
+  ]
+}
